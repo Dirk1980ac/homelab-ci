@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# the work tree, where the checkout/deploy should happen
+NIGHTLY_WORKDIR="$HOME/nas4ipa-nightly"
+RELEASE_WORKDIR="$HOME/nas4ipa-release"
+
+# the location of the .git directory
+GIT_DIR="$HOME/repos/nas4ipa.git"
+
+# Set branch for CI
+BRANCH="master"
+
+# Script to run and lockoing to avoid concurrent runs
+SCRIPT="$HOME/.ci/nas4ipa/nas4ipa-ci.sh"
+LOCK_NIGHTLY="$HOME/.ci/nas4ipa/.nightly-running"
+LOCK_RELEASE="$HOME/.ci/nas4ipa/.stable-running"
+
+while read oldrev newrev ref; do
+	if [ -x ${SCRIPT} ]; then
+		if [ "$ref" = "refs/heads/${BRANCH}" ]; then
+			if [ ! -f ${LOCK_NIGHTLY} ]; then
+				echo "Ref $ref received. Building \"nightly\" image."
+				git --work-tree="${NIGHTLY_WORKDIR}" --git-dir="${GIT_DIR}" checkout -f ${BRANCH}
+				(setsid bash ${SCRIPT} ${NIGHTLY_WORKDIR} nightly </dev/null &>/dev/null &) &
+			else
+				echo "Build is already running. Ignoring request."
+			fi
+		elif [[ "0000000000000000000000000000000000000000" == $oldrev ]] && [[ $ref == refs\/tags\/v* ]]; then
+			if [ ! -f ${LOCK_RELEASE} ]; then
+				echo "Received new release tag $ref. Building stable image."
+				git --work-tree="${RELEASE_WORKDIR}" --git-dir="${GIT_DIR}" checkout -f $ref
+				(setsid bash ${SCRIPT} ${RELEASE_WORKDIR} stable </dev/null &>/dev/null &) &
+			else
+				echo "Build is already running. Ignoring request."
+			fi
+		fi
+	else
+		echo "CI script missing."
+	fi
+done
