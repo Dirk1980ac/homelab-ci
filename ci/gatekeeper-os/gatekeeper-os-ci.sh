@@ -1,13 +1,12 @@
 #!/bin/bash
 
-set -eo pipefail
+set -o pipefail
 
 WORKDIR=$1
 TARGET=$2
 
 # Check if the triggered build is supportet to avoid dead images
-if [ "$TARGET" == "nightly" ] | [ "$TARGET" == "stable" ]; then
-
+if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
 	# Check if the desired build is already running
 	if [ ! -f $HOME/.ci/gatekeeper-os/.$TARGET-running ]; then
 		touch $HOME/.ci/gatekeeper-os/$TARGET-fail &&
@@ -19,7 +18,7 @@ if [ "$TARGET" == "nightly" ] | [ "$TARGET" == "stable" ]; then
 			podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
 				dirk1980/gatekeeper-os:$
 		# Push stable image as latest on stable build
-		if [ "$TARGET" == "stable"]; then
+		if [ "$TARGET" == "stable" ]; then
 			podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
 				dirk1980/gatekeeper-os:stable docker.io/dirk1980/gatekeeper-os:latest
 		fi

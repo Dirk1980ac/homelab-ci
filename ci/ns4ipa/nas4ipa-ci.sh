@@ -6,8 +6,7 @@ WORKDIR=$1
 TARGET=$2
 
 # Check if the triggered build is supportet to avoid dead images
-if [ "$TARGET" == "nightly" ] | [ "$TARGET" == "stable" ]; then
-
+if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
 	# Check if the desired build is already running
 	if [ ! -f $HOME/.ci/nas4ipa/.$TARGET-running ]; then
 		touch $HOME/.ci/nas4ipa/$TARGET-fail &&
