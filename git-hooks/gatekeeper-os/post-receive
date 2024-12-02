@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# the work tree, where the checkout/deploy should happen
+NIGHTLY_WORKDIR="$HOME/gatekeeper-os-nightly"
+RELEASE_WORKDIR="$HOME/gatekeeper-os-release"
+
+# the location of the .git directory
+GIT_DIR="$HOME/repos/gatekeeper-os.git"
+
+# Set branch for CI
+BRANCH="master"
+
+# Script to run and lockoing to avoid concurrent runs
+SCRIPT="$HOME/.ci/gatekeeper-os/gatekeeper-os-ci.sh"
+LOCK_NIGHTLY="$HOME/.ci/gatekeeper-os/.nightly-running"
+LOCK_RELEASE="$HOME/.ci/gatekeeper-os/.stable-running"
+
+while read oldrev newrev ref; do
+	# Check if script is available and executable
+	if [ -x ${SCRIPT} ]; then
+		if [ "$ref" = "refs/heads/${BRANCH}" ]; then
+			if [ ! -f ${LOCK_NIGHTLY} ]; then
+				echo "Ref $ref received. Building \"nightly\" image."
+				git --work-tree="${NIGHTLY_WORKDIR}" --git-dir="${GIT_DIR}" checkout -f ${BRANCH}
+				(setsid bash ${SCRIPT} ${NIGHTLY_WORKDIR} nightly </dev/null &>/dev/null &) &
+			else
+				echo "Build is already running. Ignoring request."
+			fi
+		elif [[ "0000000000000000000000000000000000000000" == $oldrev ]] && [[ $ref == refs\/tags\/v* ]]; then
+			if [ ! -f ${LOCK_RELEASE} ]; then
+				echo "Received new release tag $ref. Building stable image."
+				git --work-tree="${RELEASE_WORKDIR}" --git-dir="${GIT_DIR}" checkout -f $ref
+				(setsid bash ${SCRIPT} ${RELEASE_WORKDIR} stable </dev/null &>/dev/null &) &
+			else
+				echo "Build is already running. Ignoring request."
+			fi
+		fi
+	else
+		echo "CI script missing."
+	fi
+done
