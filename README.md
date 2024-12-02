@@ -14,9 +14,8 @@ worker script in ./ci/nas4ipa.
 
 ## Trigger
 
-A build of a stable release build is triggered when a tag matching the pattern
-v* is pushed.  
+* A build of a stable release build is triggered when a tag matching the pattern v* is pushed.  
   
-A build of a nightly image is triggered on every commit tu master branch.
+* A build of a nightly image is triggered on every commit tu master branch.
 To avoid concurrent builds of the same image the Build is ohnly triggered if it
 is not already in rpogress.

@@ -16,6 +16,7 @@ LOCK_NIGHTLY="$HOME/.ci/nas4ipa/.nightly-running"
 LOCK_RELEASE="$HOME/.ci/nas4ipa/.stable-running"
 
 while read oldrev newrev ref; do
+	# Check if script is available and executable
 	if [ -x ${SCRIPT} ]; then
 		if [ "$ref" = "refs/heads/${BRANCH}" ]; then
 			if [ ! -f ${LOCK_NIGHTLY} ]; then
