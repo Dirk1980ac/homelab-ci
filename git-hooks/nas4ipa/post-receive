@@ -2,6 +2,8 @@
 
 # SPDX-License-Identifier: GPL-2.0
 
+set -eo pipefail
+
 # the work tree, where the checkout/deploy should happen
 NIGHTLY_WORKDIR="$HOME/nas4ipa-nightly"
 RELEASE_WORKDIR="$HOME/nas4ipa-release"
