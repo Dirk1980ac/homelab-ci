@@ -1,0 +1,8 @@
+[Unit]
+Description=Build updated NAS4IPA stable image
+
+[Service]
+Type=oneshot
+PIDFile=/run/user/%U/nas4ipa-update.pid
+ExecStart=%h/.ci/nas4ipa/nas4ipa-ci.sh %h/nas4ipa-stable stable
+RemainAfterExit=no

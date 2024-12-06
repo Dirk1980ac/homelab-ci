@@ -1,0 +1,8 @@
+[Unit]
+Description=Build updated GatekeeperOS stable image
+
+[Service]
+Type=oneshot
+PIDFile=/run/user/%U/gatekeeper-update.pid
+ExecStart=%h/.ci/nas4ipa/gatekeeper-os-ci.sh %h/gatekeeper-os-stable stable
+RemainAfterExit=no

@@ -1,0 +1,9 @@
+[Unit]
+Description=Auto-update GatekeeperOS stable image
+
+[Timer]
+OnCalendar=Sat *-*-* 01:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

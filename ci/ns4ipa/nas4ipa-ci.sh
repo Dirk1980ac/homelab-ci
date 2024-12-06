@@ -18,7 +18,7 @@ if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
 			podman build --network host --platform linux/amd64,linux/arm64 \
 				--manifest dirk1980/nas4ipa:$TARGET ${WORKDIR} &&
 			podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
-				dirk1980/nas4ipa:$
+				dirk1980/nas4ipa:$TARGET
 		# Push stable image as latest on stable build
 		if [ "$TARGET" == "stable"]; then
 			podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
