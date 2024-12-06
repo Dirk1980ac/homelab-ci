@@ -4,18 +4,23 @@ This is my approach for a small CI sytem for some of my git repos at my homelab.
 
 ## Projects
 
-For now I only use this CI for one of my experimental prjects called NAS4IPA.
+For now I only use this CI for some of my experimental prjects.  
 The CI uses podman to build bootc imaghes of NAS4IPA and pushes them to registry.
 
 ## Details
 
-This small CI consists of a git post-receive hook in ./git-hooks/nas4ipa and a
-worker script in ./ci/nas4ipa.
+This small CI consists of a git post-receive hook in and a worker script for each project.
+Additionalöly there is an update script for each project to rebuild the images using cronD or a
+SystemD timer.  
+  
+For now there is much duplicated code since there are scripts for each project which can be reduces
+unifying the scripts. Probably I will do this some time, but for now I happily use them as they are.
 
 ## Trigger
 
 * A build of a stable release build is triggered when a tag matching the pattern v* is pushed.  
-  
+
 * A build of a nightly image is triggered on every commit tu master branch.
-To avoid concurrent builds of the same image the Build is ohnly triggered if it
-is not already in rpogress.
+
+* To avoid concurrent builds of the same image tag the Build is only triggered if it
+is not already in progress using a simple "lock file".

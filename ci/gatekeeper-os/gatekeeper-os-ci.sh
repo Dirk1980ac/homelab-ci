@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# SPDX-License-Identifier: GPL-2.0
+
 set -o pipefail
 
 WORKDIR=$1
@@ -16,7 +18,7 @@ if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
 			podman build --network host --platform linux/amd64,linux/arm64 \
 				--manifest dirk1980/gatekeeper-os:$TARGET ${WORKDIR} &&
 			podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
-				dirk1980/gatekeeper-os:$
+				dirk1980/gatekeeper-os:$$TARGET
 		# Push stable image as latest on stable build
 		if [ "$TARGET" == "stable" ]; then
 			podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \

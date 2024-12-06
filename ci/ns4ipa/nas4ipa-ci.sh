@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# SPDX-License-Identifier: GPL-2.0
+
 set -eo pipefail
 
 WORKDIR=$1
