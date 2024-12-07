@@ -25,6 +25,7 @@ while read oldrev newrev ref; do
 		if [ "$ref" = "refs/heads/${BRANCH}" ]; then
 			if [ ! -f ${LOCK_NIGHTLY} ]; then
 				echo "Ref $ref received. Building \"nightly\" image."
+				rm -rf "${NIGHTLY_WORKDIR}/*"
 				git --work-tree="${NIGHTLY_WORKDIR}" --git-dir="${GIT_DIR}" checkout -f ${BRANCH}
 				(setsid bash ${SCRIPT} ${NIGHTLY_WORKDIR} nightly </dev/null &>/dev/null &) &
 			else
@@ -33,6 +34,7 @@ while read oldrev newrev ref; do
 		elif [[ "0000000000000000000000000000000000000000" == $oldrev ]] && [[ $ref == refs\/tags\/v* ]]; then
 			if [ ! -f ${LOCK_RELEASE} ]; then
 				echo "Received new release tag $ref. Building stable image."
+				rm -rf "${RELEASE_WORKDIR}/*"
 				git --work-tree="${RELEASE_WORKDIR}" --git-dir="${GIT_DIR}" checkout -f $ref
 				(setsid bash ${SCRIPT} ${RELEASE_WORKDIR} stable </dev/null &>/dev/null &) &
 			else
