@@ -11,14 +11,14 @@ TARGET=$2
 if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
 	# Check if the desired build is already running
 	if [ ! -f $HOME/.ci/gatekeeper-os/.$TARGET-running ]; then
-		touch $HOME/.ci/gatekeeper-os/$TARGET-fail &&
-			touch $HOME/.ci/gatekeeper-os/.$TARGET-running &&
-			podman manifest rm dirk1980/gatekeeper-os:$TARGET &&
-			podman manifest create -a dirk1980/gatekeeper-os:$TARGET &&
-			podman build --network host --platform linux/amd64,linux/arm64 \
-				--manifest dirk1980/gatekeeper-os:$TARGET ${WORKDIR} &&
-			podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
-				dirk1980/gatekeeper-os:$TARGET
+		touch $HOME/.ci/gatekeeper-os/$TARGET-fail
+		touch $HOME/.ci/gatekeeper-os/.$TARGET-running
+		podman manifest rm dirk1980/gatekeeper-os:$TARGET
+		podman manifest create -a dirk1980/gatekeeper-os:$TARGET
+		podman build --network host --platform linux/amd64,linux/arm64 \
+			--pull newer --manifest dirk1980/gatekeeper-os:$TARGET ${WORKDIR}
+		podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
+			dirk1980/gatekeeper-os:$TARGET
 		# Push stable image as latest on stable build
 		if [ "$TARGET" == "stable" ]; then
 			podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
