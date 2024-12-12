@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# SPDX-License-Identifier: GPL-2.0
+
+PROJECT=$1
+WORKDIR=$2
+TARGET=$3
+BUILD_ID=$4
+
+# Check if the triggered build is supportet to avoid dead images
+if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
+	# Check if the desired build is already running
+	if [ ! -f $HOME/.ci/${PROJECT}/.$TARGET-running ]; then
+
+		touch $HOME/.ci/${PROJECT}/.$TARGET-running
+
+		touch $HOME/.ci/${PROJECT}/$TARGET-fail &&
+			podman manifest rm dirk1980/${PROJECT}:$TARGET &&
+			podman manifest create -a dirk1980/${PROJECT}:$TARGET &&
+			podman build --build-arg buildid= ${BUILD_ID}--platform linux/amd64,linux/arm64 \
+				--pull=newer --manifest dirk1980/${PROJECT}:$TARGET ${WORKDIR} &&
+			podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
+				dirk1980/${PROJECT}:$TARGET && rm -f $HOME/.ci/${PROJECT}/$TARGET-fail
+
+		# Push stable image as latest on stable build
+		if [ "$TARGET" == "stable"]; then
+			podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
+				dirk1980/${PROJECT}:stable docker.io/dirk1980/${PROJECT}:latest
+		fi
+
+		# Cleanup
+		rm -f $HOME/.ci/${PROJECT}/.$TARGET-running
+	fi
+fi

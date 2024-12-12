@@ -6,17 +6,13 @@ homelab.
 ## Projects
 
 For now I only use this CI for some of my experimental prjects using bootc
-technology and Frdora linux
+technology with Frdora Linux.
 
 ## Details
 
 This small CI consists of a git post-receive hook in and a worker script for
 each project. Additionalöly there is an update script for each project to
 rebuild the images using cronD or a SystemD timer.  
-  
-For now there is much duplicated code since there are scripts for each project
-which can be reduced unifying the scripts. Probably I will do this some time,
-but for now I happily use them as they are.
 
 ## Trigger
 
