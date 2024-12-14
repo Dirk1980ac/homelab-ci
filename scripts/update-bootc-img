@@ -1,0 +1,15 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+
+# Update bootc containers
+
+# I trigger this with a SystemD timer once a week to keep my images up to
+# date.
+
+# Which images should be built?
+IMAGES="mediajunkie nas4ipa gatekeeper-os"
+
+for img in ${IMAGES}; do
+	$HOME/.ci/bootc/bootc-build $img $HOME/ci-build/${PROJECT}-release \
+		stable UPD-$(date -u +%Y%m%d%H%M)
+done
