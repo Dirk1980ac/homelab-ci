@@ -15,7 +15,7 @@ if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
 		touch $HOME/.ci/${PROJECT}/.$TARGET-running
 		podman manifest rm dirk1980/${PROJECT}:$TARGET &&
 			podman manifest create -a dirk1980/${PROJECT}:$TARGET &&
-			podman build --build-arg buildid= ${BUILD_ID}--platform linux/amd64,linux/arm64 \
+			podman build --build-arg buildid=${BUILD_ID} --platform linux/amd64,linux/arm64 \
 				--pull=newer --manifest dirk1980/${PROJECT}:$TARGET ${WORKDIR} &&
 			podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
 				dirk1980/${PROJECT}:$TARGET && rm -f $HOME/.ci/${PROJECT}/$TARGET-fail
