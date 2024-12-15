@@ -6,10 +6,13 @@
 # I trigger this with a SystemD timer once a week to keep my images up to
 # date.
 
+# Set field Separator
+IFS=' '
+
 # Which images should be built?
 IMAGES="mediajunkie nas4ipa gatekeeper-os"
 
-for img in ${IMAGES}; do
-	$HOME/.ci/bootc/bootc-build $img $HOME/ci-build/${PROJECT}-release \
+for img in $IMAGES; do
+	$HOME/.ci/bootc/bootc-build $img $HOME/ci-build/$img-release \
 		stable UPD-$(date -u +%Y%m%d%H%M)
 done
