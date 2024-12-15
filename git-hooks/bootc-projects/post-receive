@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# SPDX-License-Identifier: GPL-2.0
+
+PROJECT=""
+
+if [[ $PROJECT = "" ]]; then
+	echo "Missing project name in git hook!"
+	exit 1
+fi
+
+# the work tree, where the checkout/deploy should happen
+NIGHTLY_WORKDIR="$HOME/ci-build/${PROJECT}-nightly"
+RELEASE_WORKDIR="$HOME/ci-build/${PROJECT}-release"
+
+# the location of the .git directory
+GIT_DIR="$HOME/repos/${PROJECT}.git"
+
+# Set branch for CI
+BRANCH="master"
+
+# Script to run and lockoing to avoid concurrent runs
+SCRIPT="$HOME/.ci/bootc/bootc-build"
+LOCK_NIGHTLY="$HOME/.ci/${PROJECT}/.nightly-running"
+LOCK_RELEASE="$HOME/.ci/${PROJECT}/.stable-running"
+
+while read oldrev newrev ref; do
+	# Check if script is available and executable
+	if [ -x ${SCRIPT} ]; then
+		if [ "$ref" = "refs/heads/${BRANCH}" ]; then
+			if [ ! -f ${LOCK_NIGHTLY} ]; then
+				BUILD_ID="NIG-$(date -u +%Y%m%d%H%M)"
+				echo "Ref $ref received. Building \"nightly\" image."
+
+				if [ ! -d ${NIGHTLY_WORKDIR} ]; then
+					mkdir -p ${NIGHTLY_WORKDIR}
+				fi
+
+				rm -rf "${NIGHTLY_WORKDIR}/*"
+				git --work-tree="${NIGHTLY_WORKDIR}" --git-dir="${GIT_DIR}" checkout -f ${BRANCH}
+				(setsid bash ${SCRIPT} ${PROJECT} ${NIGHTLY_WORKDIR} nightly ${BUILD_ID} </dev/null &>/dev/null &) &
+			else
+				echo "Build is already running. Ignoring request."
+			fi
+
+		elif [[ "0000000000000000000000000000000000000000" == $oldrev ]] && [[ $ref == refs\/tags\/v* ]]; then
+			if [ ! -f ${LOCK_RELEASE} ]; then
+				BUILD_ID="REL-$(date -u +%Y%m%d%H%M)"
+				echo "Received new release tag $ref. Building stable image."
+
+				if [ ! -d ${RELEASE_WORKDIR} ]; then
+					mkdir -p ${RELEASE_WORKDIR}
+				fi
+
+				rm -rf "${RELEASE_WORKDIR}/*"
+				git --work-tree="${RELEASE_WORKDIR}" --git-dir="${GIT_DIR}" checkout -f $ref
+				(setsid bash ${SCRIPT} ${PROJECT} ${RELEASE_WORKDIR} stable ${BUILD_ID} </dev/null &>/dev/null &) &
+			else
+				echo "Build is already running. Ignoring request."
+			fi
+		fi
+	else
+		echo "CI script missing."
+	fi
+done

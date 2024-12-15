@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# SPDX-License-Identifier: GPL-2.0
+
+PROJECT=$1
+WORKDIR=$2
+TARGET=$3
+BUILD_ID=$4
+
+#Initialize status variables
+MANIFEST=0
+BUILD=0
+PUSH=9
+SUCCESS=0
+
+DBFILE="$HOME/.ci/bootc/database/ci-reports.sqlite3"
+
+# Check if the triggered build is supportet to avoid dead images
+if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
+	# Check if the desired build is already running
+	if [ ! -f $HOME/.ci/${PROJECT}/.$TARGET-running ]; then
+
+		touch $HOME/.ci/${PROJECT}/.$TARGET-running
+		podman manifest rm dirk1980/${PROJECT}:$TARGE
+		podman manifest create -a dirk1980/${PROJECT}:$TARGET
+		if [ $? -eq 0 ]; then MANIFEST=1; fi
+		podman build --build-arg buildid=${BUILD_ID} --platform linux/amd64,linux/arm64 \
+			--pull=newer --manifest dirk1980/${PROJECT}:$TARGET ${WORKDIR}
+		if [ $? -eq 0 ]; then BUILD=1; fi
+		podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
+			dirk1980/${PROJECT}:$TARGET && rm -f $HOME/.ci/${PROJECT}/$TARGET-fail
+
+		# Push stable image as latest on stable build
+		if [ "$TARGET" == "stable" ]; then
+			podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
+				dirk1980/${PROJECT}:stable docker.io/dirk1980/${PROJECT}:latest
+		fi
+		if [ $? -eq 0 ]; then PUSH=1; fi
+
+		if [ $CREATE -eq 0 -a $BUILD -eq 0 -a $PUSH -eq 0 ]; then
+			SUCCESS=1
+		fi
+
+		query="insert into buildlog (buildid,project,Type,manifest,build,push) "
+		query+="VALUES (\"$BUILD_ID\",\"$PROJECT\",\"$TYPE\",$MANIFEST,$BUILD,$PUSH,$SUCCESS)"
+		sqlite3 "$DBFILE" "$query"
+		if [ $? -ne 0 ]; then touch $HOME/.ci/bootc/database-failure; fi
+
+		# We are done so remove lock file
+		rm -f $HOME/.ci/${PROJECT}/.$TARGET-running
+	fi
+fi
