@@ -19,6 +19,9 @@ DBFILE="$HOME/.ci/bootc/database/ci-reports.sqlite3"
 if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
 	# Check if the desired build is already running
 	if [ ! -f $HOME/.ci/${PROJECT}/.$TARGET-running ]; then
+		if [ ! -d $HOME/.ci/${PROJECT} ]; then
+			mkdir -p $HOME/.ci/${PROJECT}
+		fi
 
 		touch $HOME/.ci/${PROJECT}/.$TARGET-running
 		podman manifest rm dirk1980/${PROJECT}:$TARGE
