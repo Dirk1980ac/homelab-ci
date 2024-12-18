@@ -8,10 +8,10 @@ TARGET=$3
 BUILD_ID=$4
 
 #Initialize status variables
-MANIFEST=0
-BUILD=0
-PUSH=9
-SUCCESS=0
+MANIFEST=-1
+BUILD=-1
+PUSH=-1
+SUCCESS=-1
 
 DBFILE="$HOME/.ci/bootc/database/ci-reports.sqlite3"
 
@@ -37,7 +37,7 @@ if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
 		fi
 		if [ $? -eq 0 ]; then PUSH=1; fi
 
-		if [ $CREATE -eq 0 -a $BUILD -eq 0 -a $PUSH -eq 0 ]; then
+		if [ $CREATE -eq 1 -a $BUILD -eq 1 -a $PUSH -eq 1 ]; then
 			SUCCESS=1
 		fi
 
