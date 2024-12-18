@@ -42,7 +42,7 @@ if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
 		fi
 
 		query="insert into buildlog (buildid,project,Type,manifest,build,push,success) "
-		query+="VALUES ('$BUILD_ID','$PROJECT','$TYPE',$MANIFEST,$BUILD,$PUSH,$SUCCESS)"
+		query+="VALUES ('$BUILD_ID','$PROJECT','$TARGET',$MANIFEST,$BUILD,$PUSH,$SUCCESS)"
 		sqlite3 "$DBFILE" "$query"
 		if [ $? -ne 0 ]; then touch $HOME/.ci/bootc/database-failure; fi
 
