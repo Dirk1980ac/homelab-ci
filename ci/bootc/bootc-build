@@ -8,10 +8,10 @@ TARGET=$3
 BUILD_ID=$4
 
 #Initialize status variables
-MANIFEST=-1
-BUILD=-1
-PUSH=-1
-SUCCESS=-1
+MANIFEST=
+BUILD=
+PUSH=
+SUCCESS=
 
 DBFILE="$HOME/.ci/bootc/database/ci-reports.sqlite3"
 
@@ -24,12 +24,12 @@ if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
 		fi
 
 		touch $HOME/.ci/${PROJECT}/.$TARGET-running
-		podman manifest rm dirk1980/${PROJECT}:$TARGE
+		podman manifest rm dirk1980/${PROJECT}:$TARGET
 		podman manifest create -a dirk1980/${PROJECT}:$TARGET
-		if [ $? -eq 0 ]; then MANIFEST=1; fi
+		if [ $? -eq 0 ]; then MANIFEST=1; else MANIFEST=0; fi
 		podman build --build-arg buildid=${BUILD_ID} --platform linux/amd64,linux/arm64 \
 			--pull=newer --manifest dirk1980/${PROJECT}:$TARGET ${WORKDIR}
-		if [ $? -eq 0 ]; then BUILD=1; fi
+		if [ $? -eq 0 ]; then BUILD=1; else BUILD=0; fi
 		podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
 			dirk1980/${PROJECT}:$TARGET && rm -f $HOME/.ci/${PROJECT}/$TARGET-fail
 
@@ -38,10 +38,12 @@ if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
 			podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
 				dirk1980/${PROJECT}:stable docker.io/dirk1980/${PROJECT}:latest
 		fi
-		if [ $? -eq 0 ]; then PUSH=1; fi
+		if [ $? -eq 0 ]; then PUSH=1; else PUSH=0; fi
 
 		if [ $CREATE -eq 1 -a $BUILD -eq 1 -a $PUSH -eq 1 ]; then
 			SUCCESS=1
+		else
+			SUCCESS=0
 		fi
 
 		query="insert into buildlog (buildid,project,Type,manifest,build,push,success) "
