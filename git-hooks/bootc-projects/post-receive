@@ -17,8 +17,8 @@ RELEASE_WORKDIR="$HOME/ci-build/${PROJECT}-release"
 GIT_DIR="$HOME/repos/${PROJECT}.git"
 
 # Set branch for CI
-BRANCH="master"
-
+DEVEL_BRANCH="master"
+RELEASE_BRANCH="stable"
 # Script to run and lockoing to avoid concurrent runs
 SCRIPT="$HOME/.ci/bootc/bootc-build"
 LOCK_NIGHTLY="$HOME/.ci/${PROJECT}/.nightly-running"
@@ -27,7 +27,7 @@ LOCK_RELEASE="$HOME/.ci/${PROJECT}/.stable-running"
 while read oldrev newrev ref; do
 	# Check if script is available and executable
 	if [ -x ${SCRIPT} ]; then
-		if [ "$ref" = "refs/heads/${BRANCH}" ]; then
+		if [ "$ref" = "refs/heads/${DEVEL_BRANCH}" ]; then
 			if [ ! -f ${LOCK_NIGHTLY} ]; then
 				BUILD_ID="NIG-$(date -u +%Y%m%d%H%M)"
 				echo "Ref $ref received. Building \"nightly\" image."
@@ -37,13 +37,13 @@ while read oldrev newrev ref; do
 				fi
 
 				rm -rf "${NIGHTLY_WORKDIR}/*"
-				git --work-tree="${NIGHTLY_WORKDIR}" --git-dir="${GIT_DIR}" checkout -f ${BRANCH}
+				git --work-tree="${NIGHTLY_WORKDIR}" --git-dir="${GIT_DIR}" checkout -f ${DEVEL_BRANCH}
 				(setsid bash ${SCRIPT} ${PROJECT} ${NIGHTLY_WORKDIR} nightly ${BUILD_ID} </dev/null &>/dev/null &) &
 			else
 				echo "Build is already running. Ignoring request."
 			fi
 
-		elif [[ "0000000000000000000000000000000000000000" == $oldrev ]] && [[ $ref == refs\/tags\/v* ]]; then
+		elif [[ "$ref" = "refs/heads/${RELEASE_BRANCH}" ]]; then
 			if [ ! -f ${LOCK_RELEASE} ]; then
 				BUILD_ID="REL-$(date -u +%Y%m%d%H%M)"
 				echo "Received new release tag $ref. Building stable image."
@@ -53,7 +53,7 @@ while read oldrev newrev ref; do
 				fi
 
 				rm -rf "${RELEASE_WORKDIR}/*"
-				git --work-tree="${RELEASE_WORKDIR}" --git-dir="${GIT_DIR}" checkout -f $ref
+				git --work-tree="${RELEASE_WORKDIR}" --git-dir="${GIT_DIR}" checkout -f ${RELEASE_BRANCH}
 				(setsid bash ${SCRIPT} ${PROJECT} ${RELEASE_WORKDIR} stable ${BUILD_ID} </dev/null &>/dev/null &) &
 			else
 				echo "Build is already running. Ignoring request."
