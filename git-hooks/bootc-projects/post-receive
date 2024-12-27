@@ -37,8 +37,10 @@ while read oldrev newrev ref; do
 				fi
 
 				rm -rf "${NIGHTLY_WORKDIR}/*"
-				git --work-tree="${NIGHTLY_WORKDIR}" --git-dir="${GIT_DIR}" checkout -f ${DEVEL_BRANCH}
-				(setsid bash ${SCRIPT} ${PROJECT} ${NIGHTLY_WORKDIR} nightly ${BUILD_ID} </dev/null &>/dev/null &) &
+				git --work-tree="${NIGHTLY_WORKDIR}" --git-dir="${GIT_DIR}" \
+					checkout -f ${DEVEL_BRANCH}
+				(setsid bash ${SCRIPT} -p ${PROJECT} -w ${NIGHTLY_WORKDIR} \
+					-t nightly -b ${BUILD_ID} -u </dev/null &>/dev/null &) &
 			else
 				echo "Build is already running. Ignoring request."
 			fi
@@ -53,8 +55,10 @@ while read oldrev newrev ref; do
 				fi
 
 				rm -rf "${RELEASE_WORKDIR}/*"
-				git --work-tree="${RELEASE_WORKDIR}" --git-dir="${GIT_DIR}" checkout -f ${RELEASE_BRANCH}
-				(setsid bash ${SCRIPT} ${PROJECT} ${RELEASE_WORKDIR} stable ${BUILD_ID} </dev/null &>/dev/null &) &
+				git --work-tree="${RELEASE_WORKDIR}" --git-dir="${GIT_DIR}" \
+					checkout -f ${RELEASE_BRANCH}
+				(setsid bash ${SCRIPT} -p ${PROJECT} -w ${RELEASE_WORKDIR} \
+					-t stable -b ${BUILD_ID} </dev/null &>/dev/null &) &
 			else
 				echo "Build is already running. Ignoring request."
 			fi

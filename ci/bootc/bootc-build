@@ -2,18 +2,59 @@
 
 # SPDX-License-Identifier: GPL-2.0
 
-PROJECT=$1
-WORKDIR=$2
-TARGET=$3
-BUILD_ID=$4
-
-#Initialize status variables
-MANIFEST=
-BUILD=
-PUSH=
-SUCCESS=
-
+# Database file
 DBFILE="$HOME/.ci/bootc/database/ci-reports.sqlite3"
+
+cleanup() {
+	trap SIGINT
+	rm -f $HOME/.ci/${PROJECT}/.$TARGET-running
+}
+
+help() {
+	cat <<EOF
+Usage:
+bootc-build -p <project> -w <working-dir> -b <build-id> -t <target> [-u]
+
+Options:
+	-p <project>		Project name (mandatory)
+	-w <directory>		Working directory (mandatory)
+	-b <Build ID>		Build ID for the image (mandatory)
+	-t <target>			Stable or nightly target (mandatory)
+	-u					Upload to server (optional)
+EOF
+	exit 1
+}
+
+while getopts "p:w:t:b:u" flag; do
+	case $flag in
+	p) PROJECT=$OPTARG ;;
+	b) BUILD_ID=$OPTARG ;;
+	w) WORKDIR=$OPTARG ;;
+	t) TARGET=$OPTARG ;;
+	u) UPLOAD=1 ;;
+	h) help ;;
+	*)
+		echo 'Unknown option.'
+		exit 1
+		;;
+	esac
+done
+
+# Clean up if we are interrupted
+
+# Trap interrupt signal
+trap "exitfn" INT
+
+# Show help if a mandatory option is missing
+if [ -z "$PROJECT" -o -z "$BUILD_ID" -o -z "$WORKDIR" -o -z "$TARGET"]; then
+	help
+fi
+
+# Initialize status variables
+MANIFEST=0
+BUILD=0
+PUSH=0
+SUCCESS=0
 
 # Check if the triggered build is supportet to avoid dead images
 if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
@@ -26,32 +67,50 @@ if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
 		touch $HOME/.ci/${PROJECT}/.$TARGET-running
 		podman manifest rm dirk1980/${PROJECT}:$TARGET
 		podman manifest create -a dirk1980/${PROJECT}:$TARGET
-		if [ $? -eq 0 ]; then MANIFEST=1; else MANIFEST=0; fi
-		podman build --build-arg buildid=${BUILD_ID} --platform linux/amd64,linux/arm64 \
-			--pull=newer --manifest dirk1980/${PROJECT}:$TARGET ${WORKDIR}
-		if [ $? -eq 0 ]; then BUILD=1; else BUILD=0; fi
-		podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
-			dirk1980/${PROJECT}:$TARGET && rm -f $HOME/.ci/${PROJECT}/$TARGET-fail
+		if [ $? -eq 0 ]; then MANIFEST=1; fi
+		podman build --build-arg buildid=${BUILD_ID} \
+			--platform linux/amd64,linux/arm64 \
+			--pull=newer \
+			--manifest dirk1980/${PROJECT}:$TARGET ${WORKDIR}
+		if [ $? -eq 0 ]; then BUILD=1; fi
 
-		# Push stable image as latest on stable build
-		if [ "$TARGET" == "stable" ]; then
-			podman manifest push --authfile $HOME/.ci/.podman/docker.io.json \
-				dirk1980/${PROJECT}:stable docker.io/dirk1980/${PROJECT}:latest
+		if [ $UPLOAD -eq 1 ]; then
+			podman manifest push \
+				--authfile $HOME/.ci/.podman/docker.io.json \
+				dirk1980/${PROJECT}:$TARGET
+
+			# Push stable image as latest on stable build
+			if [ "$TARGET" == "stable" ]; then
+				podman manifest push \
+					--authfile $HOME/.ci/.podman/auth.json \
+					dirk1980/${PROJECT}:stable \
+					docker.io/dirk1980/${PROJECT}:latest
+			fi
+			if [ $? -eq 0 ]; then
+				PUSH=1
+			else
+				touch $HOME/.ci/${PROJECT}/$TARGET-push-fail
+			fi
 		fi
-		if [ $? -eq 0 ]; then PUSH=1; else PUSH=0; fi
 
-		if [ $CREATE -eq 1 -a $BUILD -eq 1 -a $PUSH -eq 1 ]; then
+		if [ $CREATE -eq 1 -a $BUILD -eq 1 ]; then
 			SUCCESS=1
 		else
 			SUCCESS=0
 		fi
 
-		query="insert into buildlog (buildid,project,Type,manifest,build,push,success) "
-		query+="VALUES ('$BUILD_ID','$PROJECT','$TARGET',$MANIFEST,$BUILD,$PUSH,$SUCCESS)"
+		query="insert into buildlog (buildid,project,Type,manifest,"
+		query+="build,push,success) "
+		query+="VALUES ('$BUILD_ID','$PROJECT','$TARGET',$MANIFEST,$BUILD,"
+		query+="$PUSH,$SUCCESS)"
+
 		sqlite3 "$DBFILE" "$query"
+
 		if [ $? -ne 0 ]; then touch $HOME/.ci/bootc/database-failure; fi
 
 		# We are done so remove lock file
 		rm -f $HOME/.ci/${PROJECT}/.$TARGET-running
 	fi
 fi
+
+trap SIGINT
