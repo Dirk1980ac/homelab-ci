@@ -46,7 +46,8 @@ done
 trap "exitfn" INT
 
 # Show help if a mandatory option is missing
-if [ -z "$PROJECT" -o -z "$BUILD_ID" -o -z "$WORKDIR" -o -z "$TARGET"]; then
+if [ -z "$PROJECT" ] || [ -z "$BUILD_ID" ] || [-z "$WORKDIR" ] ||
+	[ -z "$TARGET" ]; then
 	help
 fi
 
@@ -57,7 +58,7 @@ PUSH=0
 SUCCESS=0
 
 # Check if the triggered build is supportet to avoid dead images
-if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
+if [ "$TARGET" == "nightly" ] || ["$TARGET" == "stable" ]; then
 	# Check if the desired build is already running
 	if [ ! -f $HOME/.ci/${PROJECT}/.$TARGET-running ]; then
 		if [ ! -d $HOME/.ci/${PROJECT} ]; then
@@ -78,6 +79,9 @@ if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
 			podman manifest push \
 				--authfile $HOME/.ci/.podman/docker.io.json \
 				dirk1980/${PROJECT}:$TARGET
+			if [ $? -eq 0 ]; then
+				PUSH=1
+			fi
 
 			# Push stable image as latest on stable build
 			if [ "$TARGET" == "stable" ]; then
@@ -86,14 +90,9 @@ if [[ "$TARGET" == "nightly" || "$TARGET" == "stable" ]]; then
 					dirk1980/${PROJECT}:stable \
 					docker.io/dirk1980/${PROJECT}:latest
 			fi
-			if [ $? -eq 0 ]; then
-				PUSH=1
-			else
-				touch $HOME/.ci/${PROJECT}/$TARGET-push-fail
-			fi
 		fi
 
-		if [ $CREATE -eq 1 -a $BUILD -eq 1 ]; then
+		if [ $CREATE -eq 1 ] && [ $BUILD -eq 1 ]; then
 			SUCCESS=1
 		else
 			SUCCESS=0
