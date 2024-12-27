@@ -58,7 +58,7 @@ while read oldrev newrev ref; do
 				git --work-tree="${RELEASE_WORKDIR}" --git-dir="${GIT_DIR}" \
 					checkout -f ${RELEASE_BRANCH}
 				(setsid bash ${SCRIPT} -p ${PROJECT} -w ${RELEASE_WORKDIR} \
-					-t stable -b ${BUILD_ID} </dev/null &>/dev/null &) &
+					-t stable -b ${BUILD_ID} -u </dev/null &>/dev/null &) &
 			else
 				echo "Build is already running. Ignoring request."
 			fi
