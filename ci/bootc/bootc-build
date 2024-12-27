@@ -5,11 +5,13 @@
 # Database file
 DBFILE="$HOME/.ci/bootc/database/ci-reports.sqlite3"
 
+# Clean up if SIGINT occurs
 cleanup() {
 	trap SIGINT
 	rm -f $HOME/.ci/${PROJECT}/.$TARGET-running
 }
 
+# Print a hopefully useful help text.
 help() {
 	cat <<EOF
 Usage:
@@ -21,17 +23,18 @@ Options:
 	-b <Build ID>		Build ID for the image (mandatory)
 	-t <target>			Stable or nightly target (mandatory)
 	-u					Upload to server (optional)
+	-h					Show this help
 EOF
 	exit 1
 }
 
-while getopts "p:w:t:b:u" flag; do
+while getopts "p:w:t:b:uh" flag; do
 	case $flag in
 	p) PROJECT=$OPTARG ;;
 	b) BUILD_ID=$OPTARG ;;
 	w) WORKDIR=$OPTARG ;;
 	t) TARGET=$OPTARG ;;
-	u) UPLOAD=1 ;;
+	u) UPLOAD="true" ;;
 	h) help ;;
 	*)
 		echo 'Unknown option.'
@@ -39,8 +42,6 @@ while getopts "p:w:t:b:u" flag; do
 		;;
 	esac
 done
-
-# Clean up if we are interrupted
 
 # Trap interrupt signal
 trap "exitfn" INT
@@ -65,19 +66,26 @@ if [ "$TARGET" == "nightly" ] || ["$TARGET" == "stable" ]; then
 			mkdir -p $HOME/.ci/${PROJECT}
 		fi
 
+		# Lock the build to avoid concurrent builds of the same type.
 		touch $HOME/.ci/${PROJECT}/.$TARGET-running
+
+		# Remove manifest if it exists
 		podman manifest rm dirk1980/${PROJECT}:$TARGET
+
+		# Create the manifest
 		podman manifest create -a dirk1980/${PROJECT}:$TARGET
 		if [ $? -eq 0 ]; then MANIFEST=1; fi
+
 		podman build --build-arg buildid=${BUILD_ID} \
 			--platform linux/amd64,linux/arm64 \
 			--pull=newer \
 			--manifest dirk1980/${PROJECT}:$TARGET ${WORKDIR}
 		if [ $? -eq 0 ]; then BUILD=1; fi
 
-		if [ $UPLOAD -eq 1 ]; then
+		if [ "$UPLOAD" == "true" ]; then
+			# Push image.
 			podman manifest push \
-				--authfile $HOME/.ci/.podman/docker.io.json \
+				--authfile $HOME/.ci/.podman/auth.json \
 				dirk1980/${PROJECT}:$TARGET
 			if [ $? -eq 0 ]; then
 				PUSH=1
@@ -92,19 +100,23 @@ if [ "$TARGET" == "nightly" ] || ["$TARGET" == "stable" ]; then
 			fi
 		fi
 
+		# Overall success of the build. - Might be useful for statistics.
 		if [ $CREATE -eq 1 ] && [ $BUILD -eq 1 ]; then
 			SUCCESS=1
 		else
 			SUCCESS=0
 		fi
 
+		# Build the query for the build log database
 		query="insert into buildlog (buildid,project,Type,manifest,"
 		query+="build,push,success) "
 		query+="VALUES ('$BUILD_ID','$PROJECT','$TARGET',$MANIFEST,$BUILD,"
 		query+="$PUSH,$SUCCESS)"
 
+		# Execute the query on the giveb DBFILE
 		sqlite3 "$DBFILE" "$query"
 
+		# Check for error
 		if [ $? -ne 0 ]; then touch $HOME/.ci/bootc/database-failure; fi
 
 		# We are done so remove lock file
@@ -112,4 +124,5 @@ if [ "$TARGET" == "nightly" ] || ["$TARGET" == "stable" ]; then
 	fi
 fi
 
+# Reset trap for SIGINT.
 trap SIGINT
