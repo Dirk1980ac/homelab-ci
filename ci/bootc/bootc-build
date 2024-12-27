@@ -47,7 +47,7 @@ done
 trap "exitfn" INT
 
 # Show help if a mandatory option is missing
-if [ -z "$PROJECT" ] || [ -z "$BUILD_ID" ] || [-z "$WORKDIR" ] ||
+if [ -z "$PROJECT" ] || [ -z "$BUILD_ID" ] || [ -z "$WORKDIR" ] ||
 	[ -z "$TARGET" ]; then
 	help
 fi
@@ -59,7 +59,7 @@ PUSH=0
 SUCCESS=0
 
 # Check if the triggered build is supportet to avoid dead images
-if [ "$TARGET" == "nightly" ] || ["$TARGET" == "stable" ]; then
+if [ "$TARGET" == "nightly" ] || [ "$TARGET" == "stable" ]; then
 	# Check if the desired build is already running
 	if [ ! -f $HOME/.ci/${PROJECT}/.$TARGET-running ]; then
 		if [ ! -d $HOME/.ci/${PROJECT} ]; then
