@@ -13,6 +13,6 @@ IFS=' '
 IMAGES="mediajunkie nas4ipa gatekeeper-os"
 
 for img in $IMAGES; do
-	$HOME/.ci/bootc/bootc-build $img $HOME/ci-build/$img-release \
-		stable UPD-$(date -u +%Y%m%d%H%M)
+	$HOME/.ci/bootc/bootc-build -p $img -w $HOME/ci-build/$img-release \
+		-t stable -b UPD-$(date -u +%Y%m%d%H%M) -u
 done
