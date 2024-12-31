@@ -2,8 +2,24 @@
 
 # SPDX-License-Identifier: GPL-2.0
 
+# Parse command line arguments
+while getopts "p:w:t:b:uh" flag; do
+	case $flag in
+	p) PROJECT=$OPTARG ;;
+	b) BUILD_ID=$OPTARG ;;
+	w) WORKDIR=$OPTARG ;;
+	t) TARGET=$OPTARG ;;
+	u) UPLOAD="true" ;;
+	h) help ;;
+	*)
+		echo 'Unknown option.'
+		exit 1
+		;;
+	esac
+done
+
 # Database file
-DBFILE="$HOME/.ci/bootc/database/ci-reports.sqlite3"
+DBFILE="$HOME/.ci/database/ci-reports.sqlite3"
 
 # Clean up if SIGINT occurs
 cleanup() {
@@ -27,21 +43,6 @@ Options:
 EOF
 	exit 1
 }
-
-while getopts "p:w:t:b:uh" flag; do
-	case $flag in
-	p) PROJECT=$OPTARG ;;
-	b) BUILD_ID=$OPTARG ;;
-	w) WORKDIR=$OPTARG ;;
-	t) TARGET=$OPTARG ;;
-	u) UPLOAD="true" ;;
-	h) help ;;
-	*)
-		echo 'Unknown option.'
-		exit 1
-		;;
-	esac
-done
 
 # Trap interrupt signal
 trap "exitfn" INT
@@ -101,10 +102,8 @@ if [ "$TARGET" == "nightly" ] || [ "$TARGET" == "stable" ]; then
 		fi
 
 		# Overall success of the build. - Might be useful for statistics.
-		if [ $CREATE -eq 1 ] && [ $BUILD -eq 1 ]; then
+		if [[ $CREATE -eq 1 && $BUILD -eq 1 ]]; then
 			SUCCESS=1
-		else
-			SUCCESS=0
 		fi
 
 		# Build the query for the build log database
