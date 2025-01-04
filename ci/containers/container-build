@@ -6,8 +6,9 @@
 DBFILE="$HOME/.ci/database/ci-reports.sqlite3"
 
 # Print a hopefully useful help text.
-help() {
-	cat <<EOF
+help()
+{
+	cat << EOF
 Usage:
 bootc-build -p <project> -w <working-dir> [-u]
 
@@ -21,22 +22,23 @@ EOF
 	exit 1
 }
 
-while getopts "p:w:uh" flag; do
+while getopts "p:w:b:uh" flag; do
 	case $flag in
-	p) PROJECT=$OPTARG ;;
-	w) WORKDIR=$OPTARG ;;
-	u) UPLOAD="true" ;;
-	h) help ;;
-	b) BUILD_ID=$OPTARG ;;
-	*)
-		echo 'Unknown option.'
-		exit 1
-		;;
+		p) PROJECT=$OPTARG ;;
+		w) WORKDIR=$OPTARG ;;
+		u) UPLOAD="true" ;;
+		h) help ;;
+		b) BUILD_ID=$OPTARG ;;
+		*)
+			echo 'Unknown option.'
+			exit 1
+			;;
 	esac
 done
 
 # Clean up if SIGINT occurs
-cleanup() {
+cleanup()
+{
 	trap SIGINT
 	rm -f $HOME/.ci/${PROJECT}/.build-running
 }
@@ -74,8 +76,8 @@ if [ ! -f $HOME/.ci/${PROJECT}/.build-running ]; then
 	if [ $? -eq 0 ]; then MANIFEST=1; fi
 
 	podman build --platform linux/amd64,linux/arm64 \
-		--pull=newer \
-		--manifest dirk1980/${PROJECT}:latest ${WORKDIR}
+		--pull=newer --manifest dirk1980/${PROJECT}:latest ${WORKDIR}
+
 	if [ $? -eq 0 ]; then BUILD=1; fi
 
 	if [ "$UPLOAD" == "true" ]; then
@@ -89,7 +91,7 @@ if [ ! -f $HOME/.ci/${PROJECT}/.build-running ]; then
 	fi
 
 	# Overall success of the build. - Might be useful for statistics.
-	if [ $CREATE -eq 1 ] && [ $BUILD -eq 1 ]; then
+	if [ $MANIFEST -eq 1 ] && [ $BUILD -eq 1 ]; then
 		SUCCESS=1
 	fi
 
