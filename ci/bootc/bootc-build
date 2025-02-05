@@ -65,6 +65,7 @@ SUCCESS=0
 if [ "$TARGET" == "nightly" ] || [ "$TARGET" == "stable" ]; then
 	# Check if the desired build is already running
 	if [ ! -f $HOME/.ci/${PROJECT}/.$TARGET-running ]; then
+		# No buid running, so: ABRAKADABRA!
 		if [ ! -d $HOME/.ci/${PROJECT} ]; then
 			mkdir -p $HOME/.ci/${PROJECT}
 		fi
@@ -122,6 +123,7 @@ if [ "$TARGET" == "nightly" ] || [ "$TARGET" == "stable" ]; then
 		# We are done so remove lock file
 		rm -f $HOME/.ci/${PROJECT}/.$TARGET-running
 	fi
+	# There is a Build already running. Dorry guy, no ABRAKADABRA!
 fi
 
 # Reset trap for SIGINT.
