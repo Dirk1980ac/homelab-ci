@@ -1,6 +1,5 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0
-
 # Update bootc containers
 
 # I trigger this with a SystemD timer once a week to keep my images up to

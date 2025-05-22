@@ -6,8 +6,7 @@
 DBFILE="$HOME/.ci/database/ci-reports.sqlite3"
 
 # Print a hopefully useful help text.
-help()
-{
+help() {
 	cat << EOF
 Usage:
 bootc-build -p <project> -w <working-dir> [-u]
@@ -19,7 +18,7 @@ Options:
 	-b					Build ID
 	-h					Show this help
 EOF
-	exit 1
+	exit 0
 }
 
 while getopts "p:w:b:uh" flag; do
@@ -30,21 +29,10 @@ while getopts "p:w:b:uh" flag; do
 		h) help ;;
 		b) BUILD_ID=$OPTARG ;;
 		*)
-			echo 'Unknown option.'
-			exit 1
+			help
 			;;
 	esac
 done
-
-# Clean up if SIGINT occurs
-cleanup()
-{
-	trap SIGINT
-	rm -f $HOME/.ci/${PROJECT}/.build-running
-}
-
-# Trap interrupt signal
-trap "exitfn" INT
 
 # Show help if a mandatory option is missing
 if [ -z "$PROJECT" ] || [ -z "$WORKDIR" ]; then
@@ -57,9 +45,7 @@ BUILD=0
 PUSH=0
 SUCCESS=0
 
-# Check if the triggered build is supportet to avoid dead images
-
-# Check if the desired build is already running
+# Check if the triggered build is supported to avoid dead images
 if [ ! -f $HOME/.ci/${PROJECT}/.build-running ]; then
 	if [ ! -d $HOME/.ci/${PROJECT} ]; then
 		mkdir -p $HOME/.ci/${PROJECT}
@@ -69,14 +55,14 @@ if [ ! -f $HOME/.ci/${PROJECT}/.build-running ]; then
 	touch $HOME/.ci/${PROJECT}/.build-running
 
 	# Remove manifest if it exists
-	podman manifest rm dirk1980/${PROJECT}:latest
+	podman manifest rm dirk1980/${PROJECT}:latest 2> /dev/null
 
 	# Create the manifest
 	podman manifest create -a dirk1980/${PROJECT}:latest
 	if [ $? -eq 0 ]; then MANIFEST=1; fi
 
 	podman build --platform linux/amd64,linux/arm64 \
-		--pull=newer --manifest dirk1980/${PROJECT}:latest ${WORKDIR}
+		--pull=always --manifest dirk1980/${PROJECT}:latest ${WORKDIR}
 
 	if [ $? -eq 0 ]; then BUILD=1; fi
 
@@ -85,31 +71,20 @@ if [ ! -f $HOME/.ci/${PROJECT}/.build-running ]; then
 		podman manifest push \
 			--authfile $HOME/.ci/.podman/auth.json \
 			dirk1980/${PROJECT}:latest
-		if [ $? -eq 0 ]; then
-			PUSH=1
-		fi
+		if [ $? -eq 0 ]; then PUSH=1; fi
 	fi
 
 	# Overall success of the build. - Might be useful for statistics.
-	if [ $MANIFEST -eq 1 ] && [ $BUILD -eq 1 ]; then
-		SUCCESS=1
-	fi
-
+	if [[ $MANIFEST -eq 1 && $BUILD -eq 1 ]]; then SUCCESS=1; fi
 	# Build the query for the build log database
 	query="insert into buildlog (buildid,project,Type,manifest,"
-	query+="build,push,success) "
-	query+="VALUES ('$BUILD_ID','$PROJECT','',$MANIFEST,$BUILD,"
-	query+="$PUSH,$SUCCESS)"
-
-	# Execute the query on the giveb DBFILE
-	sqlite3 "$DBFILE" "$query"
-
-	# Check for error
-	if [ $? -ne 0 ]; then touch $HOME/.ci/bootc/database-failure; fi
+	query+="build,push,success) VALUES ($BUILD_ID,'$PROJECT','',0,$MANIFEST,"
+	query+="$BUILD,$PUSH,$SUCCESS)"
+	# Execute the query on the given DBFILE
+	if ! sqlite3 "$DBFILE" "$query"; then
+		touch $HOME/.ci/bootc/database-failure
+	fi
 
 	# We are done so remove lock file
 	rm -f $HOME/.ci/${PROJECT}/.build-running
 fi
-
-# Reset trap for SIGINT.
-trap SIGINT
