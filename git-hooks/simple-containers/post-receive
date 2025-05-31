@@ -27,7 +27,7 @@ while read oldrev newrev ref; do
 	if [ -x ${SCRIPT} ]; then
 		if [ "$ref" = "refs/heads/${BRANCH}" ]; then
 			if [ ! -f ${LOCK} ]; then
-				BUILD_ID="OCI-$(date -u +%Y%m%d%H%M)"
+				BUILD_ID="$(date -u +%Y%m%d.%H%M)"
 				echo "Ref $ref received. Building container image."
 
 				if [ ! -d ${WORKDIR} ]; then

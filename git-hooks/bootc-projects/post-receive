@@ -29,7 +29,7 @@ while read oldrev newrev ref; do
 	if [ -x ${SCRIPT} ]; then
 		if [ "$ref" = "refs/heads/${DEVEL_BRANCH}" ]; then
 			if [ ! -f ${LOCK_NIGHTLY} ]; then
-				BUILD_ID="NIG-$(date -u +%Y%m%d%H%M)"
+				BUILD_ID="$(date -u +%Y%m%d.%H%M)-nightly"
 				echo "Ref $ref received. Building \"nightly\" image."
 
 				if [ ! -d ${NIGHTLY_WORKDIR} ]; then
@@ -47,7 +47,7 @@ while read oldrev newrev ref; do
 
 		elif [[ "$ref" = "refs/heads/${RELEASE_BRANCH}" ]]; then
 			if [ ! -f ${LOCK_RELEASE} ]; then
-				BUILD_ID="REL-$(date -u +%Y%m%d%H%M)"
+				BUILD_ID="$(date -u +%Y%m%d.%H%M)"
 				echo "Received new release tag $ref. Building stable image."
 
 				if [ ! -d ${RELEASE_WORKDIR} ]; then

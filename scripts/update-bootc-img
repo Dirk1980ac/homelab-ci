@@ -13,5 +13,5 @@ IMAGES="mediajunkie nas4ipa gatekeeper-os"
 
 for img in $IMAGES; do
 	$HOME/.ci/bootc/bootc-build -p $img -w $HOME/ci-build/$img-release \
-		-t stable -b UPD-$(date -u +%Y%m%d%H%M) -u
+		-t stable -b $(date -u +%Y%m%d.%H%M) -u
 done
