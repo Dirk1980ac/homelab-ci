@@ -1,0 +1,18 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+
+# Update bootc containers
+
+# I trigger this with a SystemD timer once a week to keep my images up to
+# date.
+
+# Set field Separator
+IFS=' '
+
+# Which images should be built?
+IMAGES="dev-toolbox"
+
+for img in $IMAGES; do
+	$HOME/.ci/toolbox/toolbox-build-priv -p $img -w $HOME/ci-build/$img \
+		-b $(date -u +%Y%m%d.%H%M) -u
+done
