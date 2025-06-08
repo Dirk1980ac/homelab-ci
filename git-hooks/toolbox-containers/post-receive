@@ -19,7 +19,7 @@ GIT_DIR="$HOME/repos/${PROJECT}.git"
 BRANCH="master"
 
 # Script to run and lockoing to avoid concurrent runs
-SCRIPT="$HOME/.ci/containers/toolbox-build"
+SCRIPT="$HOME/.ci/toolbox/toolbox-build"
 LOCK="$HOME/.ci/${PROJECT}/.build-running"
 
 while read oldrev newrev ref; do
