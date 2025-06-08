@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# SPDX-License-Identifier: GPL-2.0
+
+PROJECT=""
+
+if [[ $PROJECT = "" ]]; then
+	echo "Missing project name in git hook!"
+	exit 1
+fi
+
+# the work tree, where the checkout/deploy should happen
+WORKDIR="$HOME/ci-build/${PROJECT}"
+
+# the location of the .git directory
+GIT_DIR="$HOME/repos/${PROJECT}.git"
+
+# Set branch for CI
+BRANCH="master"
+
+# Script to run and lockoing to avoid concurrent runs
+SCRIPT="$HOME/.ci/containers/toolbox-build"
+LOCK="$HOME/.ci/${PROJECT}/.build-running"
+
+while read oldrev newrev ref; do
+	# Check if script is available and executable
+	if [ -x ${SCRIPT} ]; then
+		if [ "$ref" = "refs/heads/${BRANCH}" ]; then
+			if [ ! -f ${LOCK} ]; then
+				BUILD_ID="$(date -u +%Y%m%d.%H%M)"
+				echo "Ref $ref received. Building container image."
+
+				if [ ! -d ${WORKDIR} ]; then
+					mkdir -p ${WORKDIR}
+				fi
+
+				rm -rf "${WORKDIR}/*"
+				git --work-tree="${WORKDIR}" --git-dir="${GIT_DIR}" \
+					checkout -f ${BRANCH}
+				(setsid bash ${SCRIPT} -p ${PROJECT} -w ${WORKDIR} \
+					-b $BUILD_ID -u < /dev/null &> /dev/null &) &
+			else
+				echo "Build is already running. Ignoring request."
+			fi
+		fi
+	else
+		echo "CI script missing."
+	fi
+done

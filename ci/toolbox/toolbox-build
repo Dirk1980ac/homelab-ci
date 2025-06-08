@@ -64,16 +64,17 @@ if [ ! -f $HOME/.ci/${PROJECT}/.build-running ]; then
 	podman build \
 		--platform linux/amd64,linux/arm64 \
 		--build-arg buildid=${BUILD_ID} \
-		--build-arg buildid=${BUILD_ID} \
-		--pull=always --manifest dirk1980/${PROJECT}:latest ${WORKDIR}
+		--security-opt label=type:unconfined_t \
+		--squash-all \
+		--pull=always \
+		--manifest dirk1980/${PROJECT}:latest ${WORKDIR}
 
 	if [ $? -eq 0 ]; then BUILD=1; fi
 
 	if [ "$UPLOAD" == "true" ]; then
 		# Push image.
 		podman manifest push \
-			--authfile $HOME/.ci/.podman/auth.json \
-			dirk1980/${PROJECT}:latest
+			--authfile $HOME/.ci/.podman/auth.json dirk1980/${PROJECT}:latest
 		if [ $? -eq 0 ]; then PUSH=1; fi
 	fi
 
