@@ -9,9 +9,13 @@
 IFS=' '
 
 # Which images should be built?
-IMAGES="mediajunkie nas4ipa gatekeeper-os"
+IMAGES=
 
-for img in $IMAGES; do
-	$HOME/.ci/bootc/bootc-build -p $img -w $HOME/ci-build/$img-release \
-		-t stable -b $(date -u +%Y%m%d.%H%M) -u
-done
+if [ -n $IMAGES ]; then
+	for img in $IMAGES; do
+		$HOME/.ci/bootc/bootc-build -p $img -w $HOME/ci-build/$img-release \
+			-t stable -b $(date -u +%Y%m%d.%H%M) -u
+	done
+else
+	echo "No images specified."
+fi

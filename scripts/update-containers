@@ -10,7 +10,7 @@
 IFS=' '
 
 # Which images should be built?
-IMAGES="dev-toolbox rpm-crossbuild"
+IMAGES=
 
 for img in $IMAGES; do
 	$HOME/.ci/containers/container-build-priv -p $img -w $HOME/ci-build/$img \

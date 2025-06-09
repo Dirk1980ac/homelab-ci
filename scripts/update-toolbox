@@ -10,7 +10,7 @@
 IFS=' '
 
 # Which images should be built?
-IMAGES="dev-toolbox"
+IMAGES=
 
 for img in $IMAGES; do
 	$HOME/.ci/toolbox/toolbox-build -p $img -w $HOME/ci-build/$img \
