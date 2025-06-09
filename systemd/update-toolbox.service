@@ -1,0 +1,8 @@
+[Unit]
+Description=Build updated toolbox images
+
+[Service]
+Type=oneshot
+PIDFile=/run/user/%U/update-bootc.pid
+ExecStart=%h/bin/update-bootc
+RemainAfterExit=yes

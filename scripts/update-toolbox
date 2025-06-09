@@ -13,6 +13,6 @@ IFS=' '
 IMAGES="dev-toolbox"
 
 for img in $IMAGES; do
-	$HOME/.ci/toolbox/toolbox-build-priv -p $img -w $HOME/ci-build/$img \
+	$HOME/.ci/toolbox/toolbox-build -p $img -w $HOME/ci-build/$img \
 		-b $(date -u +%Y%m%d.%H%M) -u
 done

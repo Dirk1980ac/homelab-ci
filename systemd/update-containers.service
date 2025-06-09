@@ -1,0 +1,8 @@
+[Unit]
+Description=Update podman container images
+
+[Service]
+Type=oneshot
+PIDFile=/run/user/%U/update-containers.pid
+ExecStart=%h/bin/update-containers
+RemainAfterExit=yes
