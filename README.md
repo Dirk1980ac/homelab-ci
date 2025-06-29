@@ -23,7 +23,3 @@ pushed.
 
 * To avoid concurrent builds of the same image tag the Build is only triggered
 if it is not already in progress using a simple "lock file".
-
-## Results
-
-Results are stored in a sqlite3 database to preserve them.

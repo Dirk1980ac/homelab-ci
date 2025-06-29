@@ -77,17 +77,6 @@ if [ ! -f $HOME/.ci/${PROJECT}/.build-running ]; then
 		if [ $? -eq 0 ]; then PUSH=1; fi
 	fi
 
-	# Overall success of the build. - Might be useful for statistics.
-	if [[ $MANIFEST -eq 1 && $BUILD -eq 1 ]]; then SUCCESS=1; fi
-	# Build the query for the build log database
-	query="insert into buildlog (buildid,project,Type,manifest,"
-	query+="build,push,success) VALUES ($BUILD_ID,'$PROJECT','',0,$MANIFEST,"
-	query+="$BUILD,$PUSH,$SUCCESS)"
-	# Execute the query on the given DBFILE
-	if ! sqlite3 "$DBFILE" "$query"; then
-		touch $HOME/.ci/bootc/database-failure
-	fi
-
 	# We are done so remove lock file
 	rm -f $HOME/.ci/${PROJECT}/.build-running
 fi

@@ -14,5 +14,5 @@ IMAGES=
 
 for img in $IMAGES; do
 	$HOME/.ci/containers/container-build-priv -p $img -w $HOME/ci-build/$img \
-		-b UPD-$(date -u +%Y%m%d%H%M) -u
+		-b $(date -u +%Y%m%d.%H%M) -u
 done
