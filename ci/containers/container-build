@@ -63,6 +63,7 @@ if [ ! -f $HOME/.ci/${PROJECT}/.build-running ]; then
 
 	podman build \
 		--platform linux/amd64,linux/arm64 \
+		--cache-ttl=12h \
 		--build-arg buildid=${BUILD_ID} \
 		--build-arg buildid=${BUILD_ID} \
 		--pull=always --manifest dirk1980/${PROJECT}:latest ${WORKDIR}

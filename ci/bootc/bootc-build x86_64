@@ -71,6 +71,7 @@ if [ ! -f $HOME/.ci/${PROJECT}/.$TARGET-running ]; then
 	touch $HOME/.ci/${PROJECT}/.$TARGET-running
 
 	podman build --build-arg buildid=${BUILD_ID} \
+		--cache-ttl=12h \
 		--security-opt label=type:unconfined_t \
 		--pull=always -t dirk1980/${PROJECT}:$TARGET ${WORKDIR}
 
@@ -80,7 +81,6 @@ if [ ! -f $HOME/.ci/${PROJECT}/.$TARGET-running ]; then
 		# Push image.
 		podman push --authfile $HOME/.ci/.podman/auth.json \
 			dirk1980/${PROJECT}:$TARGET
-		
 
 		# Push stable image as latest on stable build
 		if [ "$TARGET" == "stable" ]; then

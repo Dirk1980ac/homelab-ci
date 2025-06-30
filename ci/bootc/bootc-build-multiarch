@@ -78,6 +78,7 @@ if [ ! -f $HOME/.ci/${PROJECT}/.$TARGET-running ]; then
 	if [ $? -eq 0 ]; then MANIFEST=1; fi
 
 	podman build --build-arg buildid=${BUILD_ID} \
+		--cache-ttl=12h \
 		--platform linux/amd64,linux/arm64 \
 		--security-opt label=type:unconfined_t \
 		--pull=always --manifest dirk1980/${PROJECT}:$TARGET ${WORKDIR}
