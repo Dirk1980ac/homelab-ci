@@ -145,7 +145,7 @@ if [ "$TARGET" != "nightly" ] && [ "$TARGET" != "stable" ]; then
 	exit 1
 fi
 
-if [ $MULTIARCH -eq true ]; then
+if [ $MULTIARCH -eq 1 ]; then
 	build_args+=(--platform linux/amd64,linux/arm64)
 fi
 
