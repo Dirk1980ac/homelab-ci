@@ -26,14 +26,15 @@ SCRIPT="$HOME/.ci/podman/build-podman"
 LOCK_NIGHTLY="$HOME/.ci/${PROJECT}/.nightly-running"
 LOCK_RELEASE="$HOME/.ci/${PROJECT}/.stable-running"
 
-script_params=(
-	-p "${PROJECT}"
-	-b "${BUILD_ID}"
+script_params=()
+
+script_params+=(
+	--project="${PROJECT}"
 	-u
 )
 
 if [ $MULTIARCH -eq 1 ]; then
-	script_params+=(-m)
+	script_params+=(--multiarch)
 fi
 
 while read oldrev newrev ref; do
@@ -50,8 +51,9 @@ while read oldrev newrev ref; do
 
 				rm -rf "${NIGHTLY_WORKDIR}/*"
 				script_params+=(
-					-w "${NIGHTLY_WORKDIR}"
-					-t nightly
+					--workdir="${NIGHTLY_WORKDIR}"
+					--target nightly
+					--build-id="${BUILD_ID}"
 				)
 
 				git --work-tree="${NIGHTLY_WORKDIR}" --git-dir="${GIT_DIR}" \
@@ -71,6 +73,7 @@ while read oldrev newrev ref; do
 				fi
 				script_params+=(
 					-w "${RELEASE_WORKDIR}"
+					--build-id="${BUILD_ID}"
 					-t stable
 				)
 				rm -rf "${RELEASE_WORKDIR}/*"
