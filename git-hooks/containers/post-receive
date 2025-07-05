@@ -27,10 +27,8 @@ LOCK_NIGHTLY="$HOME/.ci/${PROJECT}/.nightly-running"
 LOCK_RELEASE="$HOME/.ci/${PROJECT}/.stable-running"
 
 script_params=(
-	-p ${PROJECT}
-	-w ${RELEASE_WORKDIR}
-	-t stable
-	-b ${BUILD_ID}
+	-p "${PROJECT}"
+	-b "${BUILD_ID}"
 	-u
 )
 
@@ -51,6 +49,11 @@ while read oldrev newrev ref; do
 				fi
 
 				rm -rf "${NIGHTLY_WORKDIR}/*"
+				script_params+=(
+					-w "${NIGHTLY_WORKDIR}"
+					-t nightly
+				)
+
 				git --work-tree="${NIGHTLY_WORKDIR}" --git-dir="${GIT_DIR}" \
 					checkout -f ${DEVEL_BRANCH}
 				(setsid bash ${SCRIPT} "${script_params[@]}" < /dev/null &> /dev/null &) &
@@ -66,7 +69,10 @@ while read oldrev newrev ref; do
 				if [ ! -d ${RELEASE_WORKDIR} ]; then
 					mkdir -p ${RELEASE_WORKDIR}
 				fi
-
+				script_params+=(
+					-w "${RELEASE_WORKDIR}"
+					-t stable
+				)
 				rm -rf "${RELEASE_WORKDIR}/*"
 				git --work-tree="${RELEASE_WORKDIR}" --git-dir="${GIT_DIR}" \
 					checkout -f ${RELEASE_BRANCH}
