@@ -33,7 +33,7 @@ script_params+=(
 	-u
 )
 
-if [ -n ${MULTIARCH} ]; then
+if [[ ${MULTIARCH} == "true" ]]; then
 	script_params+=(--multiarch)
 fi
 
