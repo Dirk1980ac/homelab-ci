@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0
 
 PROJECT=""
-MULTIARCH=0
+MULTIARCH=""
 
 if [[ $PROJECT = "" ]]; then
 	echo "Missing project name in git hook!"
@@ -33,7 +33,7 @@ script_params+=(
 	-u
 )
 
-if [ $MULTIARCH -eq 1 ]; then
+if [ -n ${MULTIARCH} ]; then
 	script_params+=(--multiarch)
 fi
 

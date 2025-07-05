@@ -11,7 +11,7 @@ WORKDIR=""
 UPLOAD=""
 BUILD_ID=""
 TARGET=""
-MULTIARCH=0
+MULTIARCH=""
 build_args=()
 
 # Print a hopefully useful help text.
@@ -87,7 +87,7 @@ while true; do
 			shift 2
 			;;
 		-m | --multiarch)
-			MULTIARCH=1
+			MULTIARCH="true"
 			shift
 			;;
 		-u | --upload)
@@ -132,20 +132,13 @@ fi
 # Database file (not directly used in the build logic, but kept for context)
 DBFILE="$HOME/.ci/database/ci-reports.sqlite3"
 
-# Initialize status variables (not strictly necessary for functionality, but good for clarity)
-# MANIFEST, BUILD, PUSH, SUCCESS are often used for logging or reporting build outcomes.
-MANIFEST=0
-BUILD=0
-PUSH=0
-SUCCESS=0
-
 # Check if the triggered build is supported to avoid dead images
 if [ "$TARGET" != "nightly" ] && [ "$TARGET" != "stable" ]; then
 	echo "Error: Target must be 'nightly' or 'stable'." >&2
 	exit 1
 fi
 
-if [ $MULTIARCH -eq 1 ]; then
+if [ -n ${MULTIARCH} ]; then
 	build_args+=(--platform linux/amd64,linux/arm64)
 fi
 
