@@ -112,7 +112,11 @@ done
 cleanup() {
 	# Remove lock file
 	if [ -n "${PROJECT}" ] && [ -n "${TARGET}" ]; then
+		# Remove lock file
 		rm -f "$HOME/.ci/${PROJECT}/.$TARGET-running"
+
+		# Remove manifest
+		podman manifest rm "dirk1980/${PROJECT}:${TARGET}"
 	fi
 }
 
@@ -162,12 +166,6 @@ if [ ! -f "$HOME/.ci/${PROJECT}/.$TARGET-running" ]; then
 
 	# Lock the build to avoid concurrent builds of the same type.
 	touch "$HOME/.ci/${PROJECT}/.$TARGET-running"
-
-	# Remove manifest if it exists
-	podman manifest exists dirk1980/${PROJECT}:${TARGET}
-	if [ $? -eq 0 ]; then
-		podman manifest rm "dirk1980/${PROJECT}:${TARGET}"
-	fi
 
 	# Create the manifest
 	podman manifest create -a "dirk1980/${PROJECT}:${TARGET}"
