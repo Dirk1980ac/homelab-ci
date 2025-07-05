@@ -5,7 +5,7 @@ homelab.
 
 ## Projects
 
-For now I only use this CI for some of my experimental prjects using bootc
+For now I only use this CI for some of my experimental projects using bootc
 technology with Frdora Linux.
 
 ## Details

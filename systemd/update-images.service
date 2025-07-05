@@ -1,8 +1,0 @@
-[Unit]
-Description=Update bootc container images
-
-[Service]
-Type=oneshot
-PIDFile=/run/user/%U/update-bootc.pid
-ExecStart=%h/bin/update-bootc
-RemainAfterExit=yes

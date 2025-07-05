@@ -1,5 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0
+
 # Update bootc containers
 
 # I trigger this with a SystemD timer once a week to keep my images up to
@@ -11,11 +12,7 @@ IFS=' '
 # Which images should be built?
 IMAGES=
 
-if [ -n $IMAGES ]; then
-	for img in $IMAGES; do
-		$HOME/.ci/bootc/bootc-build -p $img -w $HOME/ci-build/$img-release \
-			-t stable -b $(date -u +%Y%m%d.%H%M) -u
-	done
-else
-	echo "No images specified."
-fi
+for img in $IMAGES; do
+	$HOME/.ci/containers/build-podman -p $img -w $HOME/ci-build/$img \
+		-b $(date -u +%Y%m%d.%H%M) -u -m
+done

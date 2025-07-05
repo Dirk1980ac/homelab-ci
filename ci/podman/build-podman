@@ -1,0 +1,192 @@
+#!/bin/bash
+
+# SPDX-License-Identifier: GPL-2.0
+
+# Exit on error and on unbound variables
+set -eu
+
+# Initialize variables
+PROJECT=""
+WORKDIR=""
+UPLOAD=""
+BUILD_ID=""
+TARGET=""
+MULTIARCH=0
+build_args=()
+
+# Print a hopefully useful help text.
+help() {
+	cat << EOF
+Usage: $(basename $0) [OPTIONS]
+
+This script builds a multi-architecture Podman image for a specified project
+and can optionally upload it, targeting either a 'stable' or 'nightly' release.
+
+Options:
+  -p <project>, --project=<project>
+      Sets the **project name**. This option is **mandatory**.
+
+  -w <directory>, --workdir=<directory>
+      Specifies the **working directory** where the build context is located.
+      This option is **mandatory**.
+
+  -b <id>, --build-id=<id>
+      Assigns a **build ID** to the image, which can be used for versioning or tracking.
+      This option is **mandatory**.
+
+  -t <target>, --target=<target>
+      Specifies the build **target**, which must be either 'stable' or 'nightly'.
+      This option is **mandatory**.
+
+  -u, --upload
+      If provided, the built image will be **uploaded** (pushed) to the configured server.
+      For 'stable' builds, the image will also be pushed as 'latest'.
+      This option is optional.
+  
+  -m, --multiarch
+      Build multiarch image (amd64 and arm64)
+
+  -h, --help
+      Displays this help message and exits.
+
+Examples:
+  bootc-build -p myapp -w ./src -b 12345 -t nightly --upload
+  bootc-build --project=another-app --workdir=/opt/build/app --build-id=v1.2.0 --target=stable
+  bootc-build -p test-project -w /tmp/build -b abc-789 -t nightly -u
+
+EOF
+	exit 1
+}
+
+# Parse command line options
+ARGS=$(getopt -o p:w:t:b:uhm --long project:,workdir:,target:,build-id:,upload,help,multiarch -n "bootc-build" -- "$@")
+
+if [ $? -ne 0 ]; then
+	echo "Error: Failed to parse options. Please check your command." >&2
+	help
+fi
+
+eval set -- "$ARGS"
+
+while true; do
+	case "$1" in
+		-p | --project)
+			PROJECT=$2
+			shift 2
+			;;
+		-w | --workdir)
+			WORKDIR=$2
+			shift 2
+			;;
+		-t | --target)
+			TARGET=$2
+			shift 2
+			;;
+		-b | --build-id)
+			BUILD_ID=$2
+			shift 2
+			;;
+		-m | --multiarch)
+			MULTIARCH=1
+			shift
+			;;
+		-u | --upload)
+			UPLOAD="true"
+			shift
+			;;
+		-h | --help)
+			help
+			;;
+		--) # End of options
+			shift
+			break
+			;;
+		*)
+			echo "Internal error in option parsing!" >&2
+			exit 1
+			;;
+	esac
+done
+
+# cleanup function should be defined before traps
+cleanup() {
+	# Remove lock file
+	if [ -n "${PROJECT}" ] && [ -n "${TARGET}" ]; then
+		rm -f "$HOME/.ci/${PROJECT}/.$TARGET-running"
+	fi
+}
+
+# Trap for cleanup: Ensures lock file is removed even on script exit due to error or signal.
+trap cleanup EXIT
+
+# Show help if a mandatory option is missing
+if [ -z "$PROJECT" ] || [ -z "$BUILD_ID" ] || [ -z "$WORKDIR" ] || [ -z "$TARGET" ]; then
+	echo "Error: Mandatory options --project, --build-id, --workdir, and --target are missing." >&2
+	help
+fi
+
+# Database file (not directly used in the build logic, but kept for context)
+DBFILE="$HOME/.ci/database/ci-reports.sqlite3"
+
+# Initialize status variables (not strictly necessary for functionality, but good for clarity)
+# MANIFEST, BUILD, PUSH, SUCCESS are often used for logging or reporting build outcomes.
+MANIFEST=0
+BUILD=0
+PUSH=0
+SUCCESS=0
+
+# Check if the triggered build is supported to avoid dead images
+if [ "$TARGET" != "nightly" ] && [ "$TARGET" != "stable" ]; then
+	echo "Error: Target must be 'nightly' or 'stable'." >&2
+	exit 1
+fi
+
+if [ $MULTIARCH -eq true ]; then
+	build_args+=(--platform linux/amd64,linux/arm64)
+fi
+
+build_args+=(
+	--build-arg "buildid=${BUILD_ID}"
+	--cache-ttl=12h
+	--security-opt label=type:unconfined_t
+	--pull=always
+	--manifest "dirk1980/${PROJECT}:${TARGET}"
+	"$WORKDIR"
+)
+
+# Check if the desired build is already running
+if [ ! -f "$HOME/.ci/${PROJECT}/.$TARGET-running" ]; then
+	if [ ! -d "$HOME/.ci/${PROJECT}" ]; then
+		mkdir -p "$HOME/.ci/${PROJECT}"
+	fi
+
+	# Lock the build to avoid concurrent builds of the same type.
+	touch "$HOME/.ci/${PROJECT}/.$TARGET-running"
+
+	# Remove manifest if it exists
+	podman manifest exists dirk1980/${PROJECT}:${TARGET}
+	if [ $? -eq 0 ]; then
+		podman manifest rm "dirk1980/${PROJECT}:${TARGET}"
+	fi
+
+	# Create the manifest
+	podman manifest create -a "dirk1980/${PROJECT}:${TARGET}"
+
+	# Perform the multi-architecture build
+	podman build "${build_args[@]}"
+
+	if [ "$UPLOAD" == "true" ]; then
+		# Push image manifest.
+		podman manifest push \
+			--authfile "$HOME/.ci/.podman/auth.json" \
+			"dirk1980/${PROJECT}:${TARGET}"
+
+		# Push stable image as latest on stable build
+		if [ "$TARGET" == "stable" ]; then
+			podman manifest push \
+				--authfile "$HOME/.ci/.podman/auth.json" \
+				"dirk1980/${PROJECT}:stable" \
+				"docker.io/dirk1980/${PROJECT}:latest"
+		fi
+	fi
+fi
