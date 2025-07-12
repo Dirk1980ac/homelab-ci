@@ -144,7 +144,6 @@ fi
 
 build_args+=(
 	--build-arg "buildid=${BUILD_ID}"
-	--cache-ttl=12h
 	--security-opt label=type:unconfined_t
 	--pull=always
 	--network=host
