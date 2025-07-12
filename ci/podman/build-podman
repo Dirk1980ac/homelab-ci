@@ -147,6 +147,7 @@ build_args+=(
 	--cache-ttl=12h
 	--security-opt label=type:unconfined_t
 	--pull=always
+	--network=host
 	--manifest "dirk1980/${PROJECT}:${TARGET}"
 	"$WORKDIR"
 )
